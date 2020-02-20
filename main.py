@@ -12,8 +12,10 @@ from keras.applications.xception import Xception
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.optimizers import Adam
 from keras.models import Model
-
-
+import tensorflow as tf
+import keras.backend.tensorflow_backend as backend
+from threading import Threading
+from tqdm import tqdm
 
 try:
 	sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -235,6 +237,58 @@ class DQNAgent:
 			self.train()
 			time.sleep(0.01)
 
+
+if __name__ = "__main__":
+	FPS = 10
+	ep_rewards = [-200]
+
+	random.seed(1)
+	np.random.seed(1)
+	tf.set_random_seed(1)
+
+	gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = MEMORY_FRACTION)
+	backend.set_session(tf.Session(config = tf.ConfigProto(gpu_options = gpu_options)))
+
+	if not os.path.isdir("models"):
+		os.makedirs("models")
+
+	agent = DQNAgent()
+	env = CarEnv()
+
+	trainer_thread = Thread(target = agent.train_in_loop, daemon = True)
+	trainer_thread.start()
+
+	while not agent.training_initialized:
+		time.sleep(0.01)
+
+	agent.get_qs(np.ones((env.IM_HEIGHT, env.IM_WIDTH, 3)))
+
+	for episode in tqdm(range(1, EPISODES+1), ascii = True, unit = "episodes")
+	env.collision_hist = []
+	agent.tensorboard.step = episode
+	episode_reward = 0
+	step = 1 
+	current_state = env.reset()
+	done = False
+	episode_start = time.time()
+
+	while True:
+		if np.random.random() > epsilon:
+			action = np.argmax(agent.get_qs(current_state))
+
+		else:
+			action = np.random.randint(0,3)
+			time.sleep(1/FPS)
+
+		new_state, reward, done = env.step(action)
+		episode_reward += reward
+		agent.update_replay_memory((current_state, action, reward, new_state, done))
+		step += 1
+
+		if done:
+			break
+	for actır in env.actor_list:
+		actor.destroy()
 		
         
 		

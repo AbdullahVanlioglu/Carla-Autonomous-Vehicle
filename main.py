@@ -19,6 +19,9 @@ from threading import Thread
 
 from tqdm import tqdm
 
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
@@ -41,7 +44,7 @@ TRAINING_BATCH_SIZE = MINIBATCH_SIZE // 4
 UPDATE_TARGET_EVERY = 5
 MODEL_NAME = "Xception"
 
-MEMORY_FRACTION = 0.4
+MEMORY_FRACTION = 0.96
 MIN_REWARD = -200
 
 EPISODES = 100
@@ -268,8 +271,10 @@ if __name__ == '__main__':
     np.random.seed(1)
     tf.set_random_seed(1)
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=MEMORY_FRACTION)
-    backend.set_session(tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)))
+    gpu_config = tf.ConfigProto()
+    gpu_config.gpu_options.allow_growth=True
+    gpu_config.gpu_options.per_process_gpu_memory_fraction=MEMORY_FRACTION
+    backend.set_session(tf.Session(config= gpu_config))
 
     if not os.path.isdir('models'):
         os.makedirs('models')
